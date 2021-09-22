@@ -21,3 +21,4 @@ $ snake -h
 ```
 
 ## sample
+![Demo](https://github.com/sumqwerty/Bash_Snake/blob/main/demo/snakeSS.png)
