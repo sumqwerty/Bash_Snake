@@ -1,0 +1,280 @@
+#!/bin/bash
+
+
+
+function Help()
+{
+	echo "Classic Snake Game"
+	echo ""
+	echo "Syntax: snake [OPTIONS]"
+	echo ""
+	echo "Controls"
+	echo "	a -> LEFT"
+	echo "	s -> DOWN"
+	echo "	w -> UP"
+	echo "	d -> RIGHT"
+	echo ""
+	echo "options:"
+	echo "	b       Toggle of arena wrapping. The Snake will die if its head hits the boundary."
+	echo "	h       display help"
+	echo -e "\n"
+	exit 0
+}
+
+
+#toggle boundary
+boundary=false
+while getopts "bh" flag
+do
+	case "${flag}" in
+		b)	boundary=true;;
+		h)	Help
+			exit;;
+	esac
+done
+
+
+
+
+function init(){
+	#playing Arena size
+	arenaWidth=23
+	arenaHeight=20
+
+	wid=$(tput lines)
+	if [ $wid -lt 20 ]; then
+		arenaHeight=$(( $wid-3 ))
+	fi
+
+	#initial snake position
+	headPosX=5
+	headPosY=10
+
+	#initial fruit position
+	fruitX=$[ $RANDOM % $(( $arenaWidth-1 )) + 1 ]
+	fruitY=$[ $RANDOM % $(( $arenaHeight-1 )) + 1 ]
+
+
+	#intial Moving direction
+	direction="up"
+
+	#score
+	score=0
+
+
+	#arrays to store tail's coordinates
+	tailX=()
+	tailY=()
+
+	#tail length
+	nTail=0
+
+	#Display characters
+	headChar="@"
+	bodyChar="o"
+	fruitChar="%"
+	wallChar="#"
+
+	#colors
+	headCol='\e[1;96m'
+	bodyCol='\e[1;93m'
+	fruitCol='\e[1;92m'
+	wallCol='\e[1;91m'
+	nc='\033[0m'
+
+	#game loop variable
+	gameRunning=true
+
+	
+}
+
+#setting up environment
+function setEnv(){
+	trap ctrl_c INT
+	tput civis
+	stty -echo
+}
+
+#Reset environment
+function resetEnv(){
+	clear
+	tput cnorm
+	stty echo
+}
+
+#cntrl_c event
+function ctrl_c(){
+	resetEnv
+	exit
+}
+
+
+#user input
+function input(){
+
+	read -rsN1 -t 0.00005 key
+	
+	if [ "$key" = "a" ] && [ ! "$direction" = "right" ]; then
+         direction="left"
+    elif [ "$key" = "s" ] && [ ! "$direction" = "up" ]; then
+         direction="down"
+    elif [ "$key" = "w" ] && [ ! "$direction" = "down" ]; then
+         direction="up"
+	elif [ "$key" = "d" ] && [ ! "$direction" = "left" ]; then
+ 		direction="right"
+    fi
+}
+
+#moving snake
+function move(){
+
+	prevX=${tailX[0]}
+	prevY=${tailY[0]}
+	prev2X=0
+	prev2Y=0
+	tailX[0]=$headPosX
+	tailY[0]=$headPosY
+	iter=1
+	while [ $iter -lt $nTail ]
+	do
+		prev2X=${tailX[$iter]}
+		prev2Y=${tailY[$iter]}
+		tailX[$iter]=$prevX
+		tailY[$iter]=$prevY
+		prevX=$prev2X;
+		prevY=$prev2Y;
+		iter=$(( $iter+1 ))
+
+	done
+	if [ "$direction" = "up" ]; then
+		headPosY=$(( $headPosY - 1 ))
+	
+	elif [ "$direction" = "down" ]; then
+		headPosY=$(( $headPosY + 1 ))
+
+	elif [ "$direction" = "left" ]; then
+		headPosX=$(( $headPosX - 1 ))
+	
+	elif [ "$direction" = "right" ]; then
+		headPosX=$(( $headPosX + 1 ))
+	fi
+
+	
+	if  ! $boundary 
+	then
+		if [ $headPosX -eq $arenaWidth ]; then
+			headPosX=1
+		elif [ $headPosX -eq 0 ]; then
+			headPosX=$(( $arenaWidth - 1 ))
+		fi
+
+		if [ $headPosY -eq $arenaHeight ]; then
+			headPosY=1
+		elif [ $headPosY -eq 0 ]; then
+			headPosY=$(( $arenaHeight - 1 ))
+		fi
+	fi
+
+}
+
+
+#check collisions with fruit or walls or tail
+function checkCollision(){
+	
+	if [ $fruitX -eq $headPosX ] && [ $fruitY -eq $headPosY ]; then
+		score=$(( $score + 10 ))
+		fruitX=$[ $RANDOM % $(( $arenaWidth-1 )) + 1 ]
+		fruitY=$[ $RANDOM % $(( $arenaHeight-1 )) + 1 ]
+		nTail=$(( $nTail+1 ))
+		tailX+=(0)
+		tailY+=(0)
+	fi
+
+	for ((i=0; i < nTail ; ++i))
+	do
+		if [ ${tailX[$i]} -eq $headPosX ] && [ ${tailY[$i]} -eq $headPosY ]; then
+			gameRunning=false
+		fi
+	done
+
+	if $boundary
+	then
+		if [ $headPosX -le 0 ] || [ $headPosX -ge $arenaWidth ] || [ $headPosY -le 0 ] || [ $headPosY -ge $arenaHeight ]; then
+			gameRunning=false
+		fi
+	fi
+
+}
+
+
+#rendering function
+function draw(){
+	final_frame=""
+	for ((i=0 ; i <= $arenaHeight ; ++i))
+	do
+		pen=" "
+		for ((j=0 ; j <= $arenaWidth ; ++j)) 
+		do
+			if [ $i -eq 0 ] || [ $i -eq $arenaHeight ] || [ $j -eq 0 ] || [ $j -eq $arenaWidth ]
+			then
+				pen+="${wallCol}${wallChar}${nc}"
+			elif [ $i -eq $headPosY ] && [ $j -eq $headPosX ]
+			then
+				pen+="${headCol}${headChar}${nc}"
+			elif [ $i -eq $fruitY ] && [ $j -eq $fruitX ]
+			then
+				pen+="${fruitCol}${fruitChar}${nc}"
+			else
+				flag=false
+				for ((k=0 ; k < nTail ; ++k))
+				do
+					if [ ${tailX[$k]} -eq $j ] && [ ${tailY[$k]} -eq $i ]; then
+						pen+="${bodyCol}${bodyChar}${nc}"
+						flag=true
+					fi
+				done
+				if ! $flag; then
+					pen+=" "
+				fi
+			fi
+		done
+		echo -e "$pen"
+		#final_frame+="$pen\n"
+		
+	done
+	#echo -e "$final_frame"
+	echo "score: $score"
+}
+
+#main game loop
+function main(){
+	setEnv
+	playAgain=true
+	while $playAgain
+	do
+		while $gameRunning
+		do
+			input
+			move
+			checkCollision
+			draw
+			sleep 0.1
+			clear
+		done
+		resetEnv
+		echo "Your Score: $score"
+		read -e -p "Do you want to play again?[Y/n] " again
+
+		if [ "$again" = "n" ] || [ "$again" = "N" ]
+		then
+			playAgain=false
+		else
+			gameRunning=true
+			init
+			setEnv
+		fi
+	done
+	resetEnv
+}
+init
+main
