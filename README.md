@@ -3,7 +3,7 @@ The Classic Snake game for terminal written in Bash.
 
 ## to install
 ```
-wget "https://raw.githubusercontent.com/sumqwerty/Bash_Snake/main/snake" && chmod +x run && sudo cp run /usr/local/bin 
+wget "https://raw.githubusercontent.com/sumqwerty/Bash_Snake/main/snake" && chmod +x snake && sudo cp run /usr/local/bin 
 ```
 
 
