@@ -1,6 +1,12 @@
 # Bash_Snake
 The Classic Snake game for terminal written in Bash.
 
+## to install
+```
+wget "https://raw.githubusercontent.com/sumqwerty/Bash_Snake/main/snake" && chmod +x run && sudo cp run /usr/local/bin 
+```
+
+
 ## to run
 ### 1. Download(zipped folder) or clone the repository (extract the downloaded folder if needed).
 ### 2. Move the "snake" file to /usr/local/bin
